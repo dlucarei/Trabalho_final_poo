@@ -1,0 +1,158 @@
+public abstract class ItemCardapio {
+    private String nome; 
+    private double precoBase;
+
+    public ItemCardapio(String nome, double precoBase) {
+        this.nome = nome;
+        this.precoBase = precoBase;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public double getPrecoBase() {
+        return precoBase;
+    }
+
+    public abstract double calcularPrecoFinal();
+}
+
+
+
+
+
+public class PratoPrincipal extends ItemCardapio {
+
+    public PratoPrincipal(String nome, double precoBase) {
+        super(nome, precoBase);
+    }
+  
+    public double calcularPrecoFinal() {
+        return getPrecoBase();
+    }
+}
+
+
+
+
+public class Bebida extends ItemCardapio {
+    private boolean temAlcool;
+    private static final double TAXA_ALCOOL = 0.15; 
+
+    public Bebida(String nome, double precoBase, boolean temAlcool) {
+        super(nome, precoBase);
+        this.temAlcool = temAlcool;
+    }
+
+    public double calcularPrecoFinal() {
+        double preco = getPrecoBase();
+        if (temAlcool) {
+            return preco * (1 + TAXA_ALCOOL);
+        }
+        return preco;
+    }
+}
+
+
+
+
+
+ublic interface Calculavel {
+
+     double calcularTotal();
+
+     void aplicarDesconto(double percentual);
+}
+
+
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+class ItemPedido {
+    ItemCardapio item;
+    int quantidade;
+
+    public ItemPedido(ItemCardapio item, int quantidade) {
+        this.item = item;
+        this.quantidade = quantidade;
+    }
+    
+    public double calcularSubtotal() {
+        return item.calcularPrecoFinal() * quantidade;
+    }
+}
+
+public class Pedido implements Calculavel {
+    
+    private List<ItemPedido> itens = new ArrayList<>();
+    private double descontoPercentual = 0.0;
+
+    public Pedido() {}
+
+    public void adicionarItem(ItemCardapio item) {
+        adicionarItem(item, 1);
+    }
+
+    public void adicionarItem(ItemCardapio item, int quantidade) {
+        if (item == null) {
+            System.err.println("Erro: Não é possível adicionar item nulo.");
+            return;
+        }
+        if (quantidade > 0) { 
+            itens.add(new ItemPedido(item, quantidade));
+        } else {
+             System.out.println("Aviso: Item " + item.getNome() + " não adicionado, quantidade inválida.");
+        }
+    }
+
+    @Override
+    public double calcularTotal() {
+        double totalBruto = 0;
+        for (ItemPedido ip : itens) {
+            totalBruto += ip.calcularSubtotal();
+        }
+        return totalBruto * (1 - descontoPercentual);
+    }
+    
+    @Override
+    public void aplicarDesconto(double percentual) {
+        if (percentual >= 0 && percentual <= 1.0) {
+            this.descontoPercentual = percentual;
+        } else {
+            System.err.println("Erro: Desconto deve estar entre 0.0 e 1.0 (0% a 100%).");
+        }
+    }
+}
+
+
+public class Main {
+
+    public static void main(String[] args) {
+        PratoPrincipal lasanha = new PratoPrincipal("Lasanha a Bolonhesa", 45.00);
+        Bebida agua = new Bebida("Água sem gás", 5.00, false);
+        Bebida vinho = new Bebida("Vinho Tinto da Casa", 60.00, true);
+
+        Pedido pedido1 = new Pedido();
+
+        pedido1.adicionarItem(lasanha);      
+        pedido1.adicionarItem(agua, 3);     
+        pedido1.adicionarItem(vinho, 1);
+
+        System.out.printf("Custo Lasanha (sem taxa): R$ %.2f%n", lasanha.calcularPrecoFinal());
+        System.out.printf("Custo Água (sem taxa): R$ %.2f%n", agua.calcularPrecoFinal());
+        System.out.printf("Custo Vinho (COM TAXA de 15%%): R$ %.2f%n", vinho.calcularPrecoFinal());
+        
+        double totalBruto = pedido1.calcularTotal();
+        System.out.printf("\nTotal Bruto do Pedido (antes do desconto): R$ %.2f%n", totalBruto);
+
+        System.out.printf("Preço Base do Vinho (Getter): R$ %.2f%n", vinho.getPrecoBase());
+
+        pedido1.aplicarDesconto(0.10);
+        double totalFinal = pedido1.calcularTotal();
+        System.out.printf("Total Final do Pedido (com 10%% de desconto): R$ %.2f%n", totalFinal);
+    }
+}
+
